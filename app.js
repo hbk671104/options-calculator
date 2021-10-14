@@ -55,8 +55,48 @@ const getMarketHours = async (market = 'OPTION') => {
 const generateReport = async () => {
     try {
         const positions = await getPositions()
-        // console.log(positions)
-        positions.reduce((acc, position) => {}, {})
+        const report = positions.reduce((acc, position) => {
+            let { instrument, shortQuantity, longQuantity } = position
+            switch (instrument.assetType) {
+                case 'EQUITY':
+                    const { symbol } = instrument
+                    shortQuantity = shortQuantity / 100
+                    longQuantity = longQuantity / 100
+
+                    return {
+                        [symbol]: {
+                            long: acc[symbol]
+                                ? acc[symbol].long + longQuantity
+                                : longQuantity,
+                            short: acc[symbol]
+                                ? acc[symbol].short + shortQuantity
+                                : shortQuantity,
+                        },
+                        ...acc,
+                    }
+                case 'OPTION':
+                    const { underlyingSymbol, putCall } = instrument
+                    shortQuantity =
+                        putCall === 'CALL' ? shortQuantity : longQuantity
+                    longQuantity =
+                        putCall === 'CALL' ? longQuantity : shortQuantity
+
+                    return {
+                        [underlyingSymbol]: {
+                            long: acc[underlyingSymbol]
+                                ? acc[underlyingSymbol].long + longQuantity
+                                : longQuantity,
+                            short: acc[underlyingSymbol]
+                                ? acc[underlyingSymbol].short + shortQuantity
+                                : shortQuantity,
+                        },
+                        ...acc,
+                    }
+                default:
+                    return acc
+            }
+        }, {})
+        console.log(report)
     } catch (error) {
         console.error(error)
     }
