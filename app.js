@@ -55,59 +55,50 @@ const getMarketHours = async (market = 'OPTION') => {
 const generateReport = async () => {
     try {
         const positions = await getPositions()
-        const report = positions.reduce((acc, position) => {
-            let { instrument, shortQuantity, longQuantity } = position
+        return positions.reduce((acc, position) => {
+            const { instrument, shortQuantity, longQuantity } = position
+            let short, long, sym
             switch (instrument.assetType) {
                 case 'EQUITY':
                     const { symbol } = instrument
-                    shortQuantity = shortQuantity / 100
-                    longQuantity = longQuantity / 100
-
-                    return {
-                        [symbol]: {
-                            long: acc[symbol]
-                                ? acc[symbol].long + longQuantity
-                                : longQuantity,
-                            short: acc[symbol]
-                                ? acc[symbol].short + shortQuantity
-                                : shortQuantity,
-                        },
-                        ...acc,
-                    }
+                    short = shortQuantity / 100
+                    long = longQuantity / 100
+                    sym = symbol
+                    break
                 case 'OPTION':
                     const { underlyingSymbol, putCall } = instrument
-                    shortQuantity =
-                        putCall === 'CALL' ? shortQuantity : longQuantity
-                    longQuantity =
-                        putCall === 'CALL' ? longQuantity : shortQuantity
-
-                    return {
-                        [underlyingSymbol]: {
-                            long: acc[underlyingSymbol]
-                                ? acc[underlyingSymbol].long + longQuantity
-                                : longQuantity,
-                            short: acc[underlyingSymbol]
-                                ? acc[underlyingSymbol].short + shortQuantity
-                                : shortQuantity,
-                        },
-                        ...acc,
-                    }
+                    short = putCall === 'CALL' ? shortQuantity : longQuantity
+                    long = putCall === 'CALL' ? longQuantity : shortQuantity
+                    sym = underlyingSymbol
+                    break
                 default:
                     return acc
             }
+            return {
+                ...acc,
+                [sym]: {
+                    long: acc[sym] ? acc[sym].long + long : long,
+                    short: acc[sym] ? acc[sym].short + short : short,
+                },
+            }
         }, {})
-        console.log(report)
     } catch (error) {
         console.error(error)
     }
+}
+
+const saveReport = async (report) => {
+    try {
+    } catch (error) {}
 }
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
 cron.schedule(
     '05 16 * * 1-5',
-    () => {
-        generateReport()
+    async () => {
+        const report = await generateReport()
+        saveReport(report)
     },
     {
         timezone: 'America/New_York',
