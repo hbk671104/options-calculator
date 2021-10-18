@@ -93,7 +93,9 @@ dayjs.extend(localizedFormat)
 
 const formatReport = (report) => {
     try {
-        let reportString = `Portfolio Report (on ${dayjs().format('lll')})\n\n`
+        let reportString = `Portfolio Report \n(on ${dayjs().format(
+            'lll'
+        )})\n\n`
         Object.keys(report)
             .sort((a, b) => a.localeCompare(b))
             .forEach((k) => {
