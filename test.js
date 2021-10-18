@@ -1,6 +1,7 @@
-const { generateReport } = require('./app')
+const { generateReport, formatReport } = require('./app')
 
 ;(async () => {
-    const report = await generateReport()
+    let report = await generateReport()
+    report = formatReport(report)
     console.log(report)
 })()

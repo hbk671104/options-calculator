@@ -3,7 +3,7 @@ const got = require('got')
 const cron = require('node-cron')
 
 // environemnt variables
-const { REFRESH_TOKEN, CONSUMER_KEY, ACCOUNT_ID } = process.env
+const { REFRESH_TOKEN, CONSUMER_KEY, ACCOUNT_ID, PADLOCAL_TOKEN } = process.env
 
 const getBearerToken = async () => {
     try {
@@ -87,22 +87,65 @@ const generateReport = async () => {
     }
 }
 
-const saveReport = async (report) => {
+const localizedFormat = require('dayjs/plugin/localizedFormat')
+const dayjs = require('dayjs')
+dayjs.extend(localizedFormat)
+
+const formatReport = (report) => {
     try {
-    } catch (error) {}
+        let reportString = `Portfolio Report (on ${dayjs().format('lll')})\n\n`
+        Object.keys(report)
+            .sort((a, b) => a.localeCompare(b))
+            .forEach((k) => {
+                const { long, short } = report[k]
+                reportString += `${k}: ${short} shorts, ${long} longs\n`
+            })
+        return reportString
+    } catch (error) {
+        console.error(error)
+    }
 }
+
+const { Wechaty } = require('wechaty')
+const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
+
+// Launch Wechaty
+const wechaty = Wechaty.instance({
+    name: 'Opcal-Bot',
+    puppet: new PuppetPadlocal({
+        token: PADLOCAL_TOKEN,
+    }),
+})
+    .on('scan', (qrcode, status) => {
+        require('qrcode-terminal').generate(qrcode, { small: true }) // show qrcode on console
+    })
+    .on('login', (user) => console.log(`User ${user} logged in`))
+    .on('message', async (message) => {
+        const text = message.text()
+        if (message.self()) {
+            if (message.to().self()) {
+                if (/opcal/gim.test(text)) {
+                    await message.say('generating report...')
+                    const report = await generateReport()
+                    await message.say(formatReport(report))
+                }
+            }
+        }
+    })
+    .start()
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
 cron.schedule(
     '05 16 * * 1-5',
     async () => {
+        await wechaty.say('generating report...')
         const report = await generateReport()
-        saveReport(report)
+        await wechaty.say(formatReport(report))
     },
     {
         timezone: 'America/New_York',
     }
 )
 
-module.exports = { generateReport }
+module.exports = { generateReport, formatReport }
