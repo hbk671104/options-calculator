@@ -100,7 +100,7 @@ const formatReport = (report) => {
             .sort((a, b) => a.localeCompare(b))
             .forEach((k) => {
                 const { long, short } = report[k]
-                reportString += `${k}: ${short} shorts, ${long} longs\n`
+                reportString += `${k}: \n${short} shorts, ${long} longs\n\n`
             })
         return reportString
     } catch (error) {
@@ -111,9 +111,9 @@ const formatReport = (report) => {
 const { Wechaty } = require('wechaty')
 const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
 
-// Launch Wechaty
+// Instantiate Wechaty
 const wechaty = Wechaty.instance({
-    name: 'Opcal-Bot',
+    name: 'OpCal-Bot',
     puppet: new PuppetPadlocal({
         token: PADLOCAL_TOKEN,
     }),
@@ -134,11 +134,10 @@ const wechaty = Wechaty.instance({
             }
         }
     })
-    .start()
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
-cron.schedule(
+const dailyCronJob = cron.schedule(
     '05 16 * * 1-5',
     async () => {
         await wechaty.say('generating report...')
@@ -146,8 +145,12 @@ cron.schedule(
         await wechaty.say(formatReport(report))
     },
     {
+        scheduled: false,
         timezone: 'America/New_York',
     }
 )
+
+wechaty.start()
+dailyCronJob.start()
 
 module.exports = { generateReport, formatReport }
