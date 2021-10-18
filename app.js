@@ -139,10 +139,11 @@ const wechaty = Wechaty.instance({
             }
         }
     })
+    .start()
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
-const dailyCronJob = cron.schedule(
+cron.schedule(
     '05 16 * * 1-5',
     async () => {
         await wechaty.say('generating report...')
@@ -150,12 +151,9 @@ const dailyCronJob = cron.schedule(
         await wechaty.say(formatReport(report))
     },
     {
-        scheduled: false,
+        scheduled: true,
         timezone: 'America/New_York',
     }
 )
-
-// wechaty.start()
-// dailyCronJob.start()
 
 module.exports = { generateReport, formatReport }
