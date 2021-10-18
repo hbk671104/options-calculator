@@ -55,7 +55,7 @@ const getMarketHours = async (market = 'OPTION') => {
 const generateReport = async () => {
     try {
         const positions = await getPositions()
-        return positions.reduce((acc, position) => {
+        const raw = positions.reduce((acc, position) => {
             const { instrument, shortQuantity, longQuantity } = position
             let short, long, sym
             switch (instrument.assetType) {
@@ -82,6 +82,13 @@ const generateReport = async () => {
                 },
             }
         }, {})
+        return Object.keys(raw)
+            .sort((a, b) => a.localeCompare(b))
+            .map((k) => ({
+                symbol: k,
+                long: raw[k].long,
+                short: raw[k].short,
+            }))
     } catch (error) {
         console.error(error)
     }
@@ -98,16 +105,33 @@ const formatReport = (report) => {
         let reportString = `Portfolio Report \n(on ${currentTime.format(
             'lll'
         )})\n\n`
-        Object.keys(report)
-            .sort((a, b) => a.localeCompare(b))
-            .forEach((k) => {
-                const { long, short } = report[k]
-                reportString += `${k}: \n${short} shorts, ${long} longs\n\n`
-            })
+        for (const item of report) {
+            const { symbol, long, short } = item
+            reportString += `${symbol}: \n${short} shorts, ${long} longs\n\n`
+        }
         // write to file
         const filename = `./cache/report_${currentTime.unix()}.txt`
         fs.writeFileSync(filename, reportString)
         return FileBox.fromFile(filename)
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+const AV = require('leancloud-storage')
+
+AV.init({
+    appId: 'UkHdVwDNRyWvzd00PeHtDOPc-MdYXbMMI',
+    appKey: 'JBg7kPsAAtUXFCuIpv1qJAuX',
+})
+
+const saveReport = async (report) => {
+    try {
+        for (const item of report) {
+            const reportObject = new AV.Object('Report')
+            reportObject.set(item)
+            await reportObject.save()
+        }
     } catch (error) {
         console.error(error)
     }
@@ -148,6 +172,7 @@ cron.schedule(
     async () => {
         await wechaty.say('generating report...')
         const report = await generateReport()
+        await saveReport(report)
         await wechaty.say(formatReport(report))
     },
     {
@@ -156,4 +181,4 @@ cron.schedule(
     }
 )
 
-module.exports = { generateReport, formatReport }
+module.exports = { generateReport, formatReport, saveReport }
