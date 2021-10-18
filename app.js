@@ -87,13 +87,15 @@ const generateReport = async () => {
     }
 }
 
-const localizedFormat = require('dayjs/plugin/localizedFormat')
+const fs = require('fs')
 const dayjs = require('dayjs')
+const localizedFormat = require('dayjs/plugin/localizedFormat')
 dayjs.extend(localizedFormat)
 
 const formatReport = (report) => {
+    const currentTime = dayjs()
     try {
-        let reportString = `Portfolio Report \n(on ${dayjs().format(
+        let reportString = `Portfolio Report \n(on ${currentTime.format(
             'lll'
         )})\n\n`
         Object.keys(report)
@@ -102,13 +104,16 @@ const formatReport = (report) => {
                 const { long, short } = report[k]
                 reportString += `${k}: \n${short} shorts, ${long} longs\n\n`
             })
-        return reportString
+        // write to file
+        const filename = `./cache/report_${currentTime.unix()}.txt`
+        fs.writeFileSync(filename, reportString)
+        return FileBox.fromFile(filename)
     } catch (error) {
         console.error(error)
     }
 }
 
-const { Wechaty } = require('wechaty')
+const { Wechaty, FileBox } = require('wechaty')
 const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
 
 // Instantiate Wechaty
@@ -150,7 +155,7 @@ const dailyCronJob = cron.schedule(
     }
 )
 
-wechaty.start()
-dailyCronJob.start()
+// wechaty.start()
+// dailyCronJob.start()
 
 module.exports = { generateReport, formatReport }
