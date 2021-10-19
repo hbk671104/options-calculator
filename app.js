@@ -99,11 +99,9 @@ const dayjs = require('dayjs')
 dayjs.extend(require('dayjs/plugin/localizedFormat'))
 dayjs.extend(require('dayjs/plugin/utc'))
 dayjs.extend(require('dayjs/plugin/timezone'))
-// Set default timezone
-dayjs.tz.setDefault('America/New_York')
 
 const formatReport = (report) => {
-    const currentTime = dayjs()
+    const currentTime = dayjs().tz('America/New_York')
     try {
         let reportString = `Portfolio Report \n(on ${currentTime.format(
             'lll'
