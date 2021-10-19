@@ -148,13 +148,23 @@ const wechaty = Wechaty.instance({
     }),
 })
     .on('scan', (qrcode, status) => {
-        require('qrcode-terminal').generate(qrcode, { small: true }) // show qrcode on console
+        if (status === ScanStatus.Waiting && qrcode) {
+            const qrcodeImageUrl = [
+                'https://api.qrserver.com/v1/create-qr-code/?data=',
+                encodeURIComponent(qrcode),
+            ].join('')
+            console.log(
+                `onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`
+            )
+        } else {
+            console.log(`onScan: ${ScanStatus[status]}(${status})`)
+        }
     })
     .on('login', (user) => console.log(`User ${user} logged in`))
     .on('message', async (message) => {
         const text = message.text()
         if (message.self()) {
-            if (message.to().self()) {
+            if (message.to() && message.to().self()) {
                 if (/opcal/gim.test(text)) {
                     await message.say('generating report...')
                     const report = await generateReport()
@@ -162,6 +172,9 @@ const wechaty = Wechaty.instance({
                 }
             }
         }
+    })
+    .on('logout', (user) => {
+        console.log(`User ${user} logout`)
     })
     .start()
 

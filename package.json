@@ -1,12 +1,15 @@
 {
-  "dependencies": {
-    "dayjs": "^1.10.7",
-    "dotenv": "^10.0.0",
-    "got": "^11.8.2",
-    "leancloud-storage": "^4.12.0",
-    "node-cron": "^3.0.0",
-    "qrcode-terminal": "^0.12.0",
-    "wechaty": "^0.68.1",
-    "wechaty-puppet-padlocal": "^0.4.2"
-  }
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "dayjs": "^1.10.7",
+        "dotenv": "^10.0.0",
+        "got": "^11.8.2",
+        "leancloud-storage": "^4.12.0",
+        "node-cron": "^3.0.0",
+        "qrcode-terminal": "^0.12.0",
+        "wechaty": "^0.68.1",
+        "wechaty-puppet-padlocal": "^0.4.2"
+    }
 }
