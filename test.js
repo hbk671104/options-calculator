@@ -1,7 +1,7 @@
-const { generateReport, formatReport, saveReport } = require('./app')
+require('dotenv').config()
+const { generateReport, formatReport } = require('./report')
 
 ;(async () => {
     let report = await generateReport()
-    await saveReport(report)
     console.log(formatReport(report))
 })()
