@@ -96,8 +96,11 @@ const generateReport = async () => {
 
 const fs = require('fs')
 const dayjs = require('dayjs')
-const localizedFormat = require('dayjs/plugin/localizedFormat')
-dayjs.extend(localizedFormat)
+dayjs.extend(require('dayjs/plugin/localizedFormat'))
+dayjs.extend(require('dayjs/plugin/utc'))
+dayjs.extend(require('dayjs/plugin/timezone'))
+// Set default timezone
+dayjs.tz.setDefault('America/New_York')
 
 const formatReport = (report) => {
     const currentTime = dayjs()
