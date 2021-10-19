@@ -148,17 +148,18 @@ const wechaty = Wechaty.instance({
     }),
 })
     .on('scan', (qrcode, status) => {
-        if (status === ScanStatus.Waiting && qrcode) {
-            const qrcodeImageUrl = [
-                'https://api.qrserver.com/v1/create-qr-code/?data=',
-                encodeURIComponent(qrcode),
-            ].join('')
-            console.log(
-                `onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`
-            )
-        } else {
-            console.log(`onScan: ${ScanStatus[status]}(${status})`)
-        }
+        // if (status === ScanStatus.Waiting && qrcode) {
+        //     const qrcodeImageUrl = [
+        //         'https://api.qrserver.com/v1/create-qr-code/?data=',
+        //         encodeURIComponent(qrcode),
+        //     ].join('')
+        //     console.log(
+        //         `onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`
+        //     )
+        // } else {
+        //     console.log(`onScan: ${ScanStatus[status]}(${status})`)
+        // }
+        require('qrcode-terminal').generate(qrcode, { small: true })
     })
     .on('login', (user) => console.log(`User ${user} logged in`))
     .on('message', async (message) => {
