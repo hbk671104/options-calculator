@@ -120,7 +120,6 @@ const formatReport = (report) => {
 }
 
 const AV = require('leancloud-storage')
-
 AV.init({
     appId: 'UkHdVwDNRyWvzd00PeHtDOPc-MdYXbMMI',
     appKey: 'JBg7kPsAAtUXFCuIpv1qJAuX',
@@ -128,11 +127,13 @@ AV.init({
 
 const saveReport = async (report) => {
     try {
-        for (const item of report) {
-            const reportObject = new AV.Object('Report')
-            reportObject.set(item)
-            await reportObject.save()
-        }
+        await AV.Object.saveAll(
+            report.map((item) => {
+                const object = new AV.Object('Report')
+                object.set(item)
+                return object
+            })
+        )
     } catch (error) {
         console.error(error)
     }
