@@ -142,7 +142,7 @@ const { Wechaty, FileBox } = require('wechaty')
 const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
 
 // Instantiate Wechaty
-const wechaty = Wechaty.instance({
+Wechaty.instance({
     name: 'OpCal-Bot',
     puppet: new PuppetPadlocal({
         token: PADLOCAL_TOKEN,
@@ -185,13 +185,12 @@ const wechaty = Wechaty.instance({
 cron.schedule(
     '05 16 * * 1-5',
     async () => {
-        await wechaty.say('generating report...')
+        console.log('generating daily report...')
         const report = await generateReport()
         await saveReport(report)
-        await wechaty.say(formatReport(report))
+        console.log('daily report saved.')
     },
     {
-        scheduled: true,
         timezone: 'America/New_York',
     }
 )
