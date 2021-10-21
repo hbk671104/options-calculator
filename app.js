@@ -168,7 +168,9 @@ Wechaty.instance({
                     await message.say(`generating report (${account.id})...`)
                     const report = await generateReport()
                     await message.say(formatReport(report))
-                } else if (/opcal2/gim.test(text)) {
+                }
+
+                if (/liwei/gim.test(text)) {
                     account = account_2
                     await message.say(`generating report (${account.id})...`)
                     const report = await generateReport()
