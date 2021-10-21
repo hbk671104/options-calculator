@@ -2,8 +2,11 @@ require('dotenv').config()
 const got = require('got')
 const cron = require('node-cron')
 
-// environemnt variables
-const { REFRESH_TOKEN, CONSUMER_KEY, ACCOUNT_ID, PADLOCAL_TOKEN } = process.env
+const { CONSUMER_KEY, PADLOCAL_TOKEN } = process.env
+const { account_1, account_2 } = require('./account')
+
+// global account
+let account = account_1
 
 const getBearerToken = async () => {
     try {
@@ -11,7 +14,7 @@ const getBearerToken = async () => {
             .post('https://api.tdameritrade.com/v1/oauth2/token', {
                 form: {
                     grant_type: 'refresh_token',
-                    refresh_token: REFRESH_TOKEN,
+                    refresh_token: account.refresh_token,
                     client_id: CONSUMER_KEY,
                 },
             })
@@ -28,7 +31,7 @@ const getPositions = async () => {
         const {
             securitiesAccount: { positions },
         } = await got(
-            `https://api.tdameritrade.com/v1/accounts/${ACCOUNT_ID}?fields=positions`,
+            `https://api.tdameritrade.com/v1/accounts/${account.id}?fields=positions`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
@@ -36,17 +39,6 @@ const getPositions = async () => {
             }
         ).json()
         return positions
-    } catch (error) {
-        console.error(error)
-    }
-}
-
-const getMarketHours = async (market = 'OPTION') => {
-    try {
-        const { option } = await got(
-            `https://api.tdameritrade.com/v1/marketdata/${market}/hours?apikey=${CONSUMER_KEY}`
-        ).json()
-        return option
     } catch (error) {
         console.error(error)
     }
@@ -103,15 +95,17 @@ dayjs.extend(require('dayjs/plugin/timezone'))
 const formatReport = (report) => {
     const currentTime = dayjs().tz('America/New_York')
     try {
-        let reportString = `Portfolio Report \n(on ${currentTime.format(
-            'lll'
-        )})\n\n`
+        let reportString = `Portfolio Report of ${
+            account.id
+        }\n(on ${currentTime.format('lll')})\n\n`
         for (const item of report) {
             const { symbol, long, short } = item
             reportString += `${symbol}: \n${short} shorts, ${long} longs\n\n`
         }
         // write to file
-        const filename = `./cache/report_${currentTime.unix()}.txt`
+        const filename = `./cache/report_${
+            account.id
+        }_${currentTime.unix()}.txt`
         fs.writeFileSync(filename, reportString)
         return FileBox.fromFile(filename)
     } catch (error) {
@@ -131,6 +125,7 @@ const saveReport = async (report) => {
             report.map((item) => {
                 const object = new AV.Object('Report')
                 object.set(item)
+                object.set('account', account.id)
                 return object
             })
         )
@@ -169,7 +164,13 @@ Wechaty.instance({
         if (message.self()) {
             if (message.to() && message.to().self()) {
                 if (/opcal/gim.test(text)) {
-                    await message.say('generating report...')
+                    account = account_1
+                    await message.say(`generating report (${account.id})...`)
+                    const report = await generateReport()
+                    await message.say(formatReport(report))
+                } else if (/opcal2/gim.test(text)) {
+                    account = account_2
+                    await message.say(`generating report (${account.id})...`)
                     const report = await generateReport()
                     await message.say(formatReport(report))
                 }
@@ -186,10 +187,12 @@ Wechaty.instance({
 cron.schedule(
     '05 16 * * 1-5',
     async () => {
-        console.log('generating daily report...')
-        const report = await generateReport()
-        await saveReport(report)
-        console.log('daily report saved.')
+        console.log('generating daily reports...')
+        account = account_1
+        await saveReport(await generateReport())
+        account = account_2
+        await saveReport(await generateReport())
+        console.log('daily reports saved.')
     },
     {
         timezone: 'America/New_York',
