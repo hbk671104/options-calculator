@@ -74,15 +74,14 @@ const generateReport = async () => {
                 },
             }
         }, {})
-        return Object.keys(raw)
-            .sort((a, b) => a.localeCompare(b))
-            .map((k) => ({
-                symbol: k,
-                long: raw[k].long,
-                short: raw[k].short,
-            }))
+        const report = Object.keys(raw).map((key) => ({
+            symbol: key,
+            short: raw[key].short,
+            long: raw[key].long,
+        }))
+        return Promise.resolve(report)
     } catch (error) {
-        console.error(error)
+        return Promise.reject(error)
     }
 }
 
@@ -94,23 +93,20 @@ dayjs.extend(require('dayjs/plugin/timezone'))
 
 const formatReport = (report) => {
     const currentTime = dayjs().tz('America/New_York')
-    try {
-        let reportString = `Portfolio Report of ${
-            account.id
-        }\n(on ${currentTime.format('lll')})\n\n`
-        for (const item of report) {
-            const { symbol, long, short } = item
-            reportString += `${symbol}: \n${short} shorts, ${long} longs\n\n`
-        }
-        // write to file
-        const filename = `./cache/report_${
-            account.id
-        }_${currentTime.unix()}.txt`
-        fs.writeFileSync(filename, reportString)
-        return FileBox.fromFile(filename)
-    } catch (error) {
-        console.error(error)
+
+    // concat string
+    let reportString = `Portfolio Report of ${
+        account.id
+    }\n(on ${currentTime.format('lll')})\n\n`
+    for (const item of report) {
+        const { symbol, long, short } = item
+        reportString += `${symbol}: \n${short} shorts, ${long} longs\n\n`
     }
+
+    // write to file
+    const filename = `./cache/report_${account.id}_${currentTime.unix()}.txt`
+    fs.writeFileSync(filename, reportString)
+    return FileBox.fromFile(filename)
 }
 
 const AV = require('leancloud-storage')
@@ -160,23 +156,31 @@ Wechaty.instance({
     })
     .on('login', (user) => console.log(`User ${user} logged in`))
     .on('message', async (message) => {
-        const text = message.text()
-        if (message.self()) {
-            if (message.to() && message.to().self()) {
-                if (/opcal/gim.test(text)) {
-                    account = account_1
-                    await message.say(`generating report (${account.id})...`)
-                    const report = await generateReport()
-                    await message.say(formatReport(report))
-                }
+        try {
+            const text = message.text()
+            if (message.self()) {
+                if (message.to() && message.to().self()) {
+                    if (/opcal/gim.test(text)) {
+                        account = account_1
+                        await message.say(
+                            `generating report (${account.id})...`
+                        )
+                        const report = await generateReport()
+                        await message.say(formatReport(report))
+                    }
 
-                if (/liwei/gim.test(text)) {
-                    account = account_2
-                    await message.say(`generating report (${account.id})...`)
-                    const report = await generateReport()
-                    await message.say(formatReport(report))
+                    if (/liwei/gim.test(text)) {
+                        account = account_2
+                        await message.say(
+                            `generating report (${account.id})...`
+                        )
+                        const report = await generateReport()
+                        await message.say(formatReport(report))
+                    }
                 }
             }
+        } catch (error) {
+            console.error(error)
         }
     })
     .on('logout', (user) => {
@@ -189,12 +193,16 @@ Wechaty.instance({
 cron.schedule(
     '05 16 * * 1-5',
     async () => {
-        console.log('generating daily reports...')
-        account = account_1
-        await saveReport(await generateReport())
-        account = account_2
-        await saveReport(await generateReport())
-        console.log('daily reports saved.')
+        try {
+            console.log('generating daily reports...')
+            account = account_1
+            await saveReport(await generateReport())
+            account = account_2
+            await saveReport(await generateReport())
+            console.log('daily reports saved.')
+        } catch (error) {
+            console.error(error)
+        }
     },
     {
         timezone: 'America/New_York',
