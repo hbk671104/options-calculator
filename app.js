@@ -19,9 +19,9 @@ const getBearerToken = async () => {
                 },
             })
             .json()
-        return access_token
+        return Promise.resolve(access_token)
     } catch (error) {
-        console.error(error)
+        return Promise.reject(error)
     }
 }
 
@@ -38,9 +38,9 @@ const getPositions = async () => {
                 },
             }
         ).json()
-        return positions
+        return Promise.resolve(positions)
     } catch (error) {
-        console.error(error)
+        return Promise.reject(error)
     }
 }
 
@@ -182,7 +182,7 @@ Wechaty.instance({
     .on('logout', (user) => {
         console.log(`User ${user} logout`)
     })
-    .start()
+// .start()
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
