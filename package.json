@@ -1,6 +1,7 @@
 {
     "scripts": {
-        "start": "node app.js"
+        "start": "node app.js",
+        "test": "nodemon test.js"
     },
     "dependencies": {
         "dayjs": "^1.10.7",

@@ -201,4 +201,4 @@ cron.schedule(
     }
 )
 
-module.exports = { generateReport, formatReport, saveReport }
+module.exports = { getBearerToken, generateReport, formatReport, saveReport }
