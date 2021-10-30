@@ -182,7 +182,7 @@ Wechaty.instance({
     .on('logout', (user) => {
         console.log(`User ${user} logout`)
     })
-// .start()
+    .start()
 
 // Schedule the job to run
 // at 16:05 on every day-of-week from Monday through Friday.
