@@ -1,6 +1,7 @@
 require('dotenv').config()
 const got = require('got')
 const cron = require('node-cron')
+const store = require('store')
 
 const { CONSUMER_KEY, PADLOCAL_TOKEN } = process.env
 const { account_1, account_2 } = require('./account')
@@ -27,7 +28,7 @@ const getBearerToken = async () => {
 
 const getPositions = async () => {
     try {
-        const accessToken = await getBearerToken()
+        const accessToken = store.get(account.id)
         const {
             securitiesAccount: { positions },
         } = await got(
@@ -130,6 +131,23 @@ const saveReport = async (report) => {
     }
 }
 
+const sleep = (second) =>
+    new Promise((resolve) => setTimeout(resolve, second * 1000))
+
+const cacheBearerToken = async () => {
+    try {
+        console.log('cache bearer tokens...')
+        account = account_1
+        store.set(account.id, await getBearerToken())
+        await sleep(1)
+        account = account_2
+        store.set(account.id, await getBearerToken())
+        console.log('bearer tokens cached...')
+    } catch (error) {
+        console.error(error)
+    }
+}
+
 const { Wechaty, FileBox } = require('wechaty')
 const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
 
@@ -154,7 +172,14 @@ Wechaty.instance({
         // }
         require('qrcode-terminal').generate(qrcode, { small: true })
     })
-    .on('login', (user) => console.log(`User ${user} logged in`))
+    .on('login', async (user) => {
+        try {
+            console.log(`User ${user} logged in`)
+            await cacheBearerToken()
+        } catch (error) {
+            console.error(error)
+        }
+    })
     .on('message', async (message) => {
         try {
             const text = message.text()
@@ -188,8 +213,6 @@ Wechaty.instance({
     })
     .start()
 
-// Schedule the job to run
-// at 16:05 on every day-of-week from Monday through Friday.
 cron.schedule(
     '05 16 * * 1-5',
     async () => {
@@ -200,6 +223,20 @@ cron.schedule(
             account = account_2
             await saveReport(await generateReport())
             console.log('daily reports saved.')
+        } catch (error) {
+            console.error(error)
+        }
+    },
+    {
+        timezone: 'America/New_York',
+    }
+)
+
+cron.schedule(
+    '0 8 * * *',
+    async () => {
+        try {
+            await cacheBearerToken()
         } catch (error) {
             console.error(error)
         }
