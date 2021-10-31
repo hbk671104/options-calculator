@@ -233,7 +233,7 @@ cron.schedule(
 )
 
 cron.schedule(
-    '0,30 * * * *',
+    '*/20 * * * *',
     async () => {
         try {
             await cacheBearerToken()
