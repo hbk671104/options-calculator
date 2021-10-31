@@ -75,11 +75,13 @@ const generateReport = async () => {
                 },
             }
         }, {})
-        const report = Object.keys(raw).map((key) => ({
-            symbol: key,
-            short: raw[key].short,
-            long: raw[key].long,
-        }))
+        const report = Object.keys(raw)
+            .sort((a, b) => a.localeCompare(b))
+            .map((key) => ({
+                symbol: key,
+                short: raw[key].short,
+                long: raw[key].long,
+            }))
         return Promise.resolve(report)
     } catch (error) {
         return Promise.reject(error)
