@@ -152,68 +152,76 @@ const cacheBearerToken = async () => {
 
 const { Wechaty, FileBox } = require('wechaty')
 const { PuppetPadlocal } = require('wechaty-puppet-padlocal')
+const QRCode = require('qrcode-terminal')
 
-// Instantiate Wechaty
-Wechaty.instance({
-    name: 'OpCal-Bot',
-    puppet: new PuppetPadlocal({
-        token: PADLOCAL_TOKEN,
-    }),
-})
-    .on('scan', (qrcode, status) => {
-        // if (status === ScanStatus.Waiting && qrcode) {
-        //     const qrcodeImageUrl = [
-        //         'https://api.qrserver.com/v1/create-qr-code/?data=',
-        //         encodeURIComponent(qrcode),
-        //     ].join('')
-        //     console.log(
-        //         `onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`
-        //     )
-        // } else {
-        //     console.log(`onScan: ${ScanStatus[status]}(${status})`)
-        // }
-        require('qrcode-terminal').generate(qrcode, { small: true })
+const createBot = async () => {
+    const bot = Wechaty.instance({
+        name: 'OpCal-Bot',
+        puppet: new PuppetPadlocal({
+            token: PADLOCAL_TOKEN,
+        }),
     })
-    .on('login', async (user) => {
-        try {
-            console.log(`User ${user} logged in`)
-            await cacheBearerToken()
-        } catch (error) {
-            console.error(error)
-        }
-    })
-    .on('message', async (message) => {
-        try {
-            const text = message.text()
-            if (message.self()) {
-                if (message.to() && message.to().self()) {
-                    if (/opcal/gim.test(text)) {
-                        account = account_1
-                        await message.say(
-                            `generating report (${account.id})...`
-                        )
-                        const report = await generateReport()
-                        await message.say(formatReport(report))
-                    }
+        .on('scan', (qrcode, status) => {
+            if (status === ScanStatus.Waiting && qrcode) {
+                console.info(
+                    `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`
+                )
+                QRCode.generate(qrcode, { small: true })
+            } else {
+                console.info(`onScan: ${ScanStatus[status]}(${status})`)
+            }
+        })
+        .on('login', async (user) => {
+            try {
+                console.log(`User ${user} logged in`)
+                await cacheBearerToken()
+            } catch (error) {
+                console.error(error)
+            }
+        })
+        .on('message', async (message) => {
+            try {
+                const text = message.text()
+                if (message.self()) {
+                    if (message.to() && message.to().self()) {
+                        if (/opcal/gim.test(text)) {
+                            account = account_1
+                            await message.say(
+                                `generating report (${account.id})...`
+                            )
+                            const report = await generateReport()
+                            await message.say(formatReport(report))
+                        }
 
-                    if (/liwei/gim.test(text)) {
-                        account = account_2
-                        await message.say(
-                            `generating report (${account.id})...`
-                        )
-                        const report = await generateReport()
-                        await message.say(formatReport(report))
+                        if (/liwei/gim.test(text)) {
+                            account = account_2
+                            await message.say(
+                                `generating report (${account.id})...`
+                            )
+                            const report = await generateReport()
+                            await message.say(formatReport(report))
+                        }
                     }
                 }
+            } catch (error) {
+                console.error(error)
             }
-        } catch (error) {
-            console.error(error)
-        }
-    })
-    .on('logout', (user) => {
-        console.log(`User ${user} logout`)
-    })
-    .start()
+        })
+        .on('logout', (user) => {
+            console.log(`User ${user} logout`)
+        })
+
+    await bot.start()
+    await bot.ready()
+
+    // initialization complete
+    await bot.say('Welcome!')
+    console.log('OpCal-Bot is running!')
+
+    return bot
+}
+
+createBot()
 
 cron.schedule(
     '05 16 * * 1-5',

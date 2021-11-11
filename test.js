@@ -3,11 +3,11 @@ const {
     generateReport,
     formatReport,
     saveReport,
+    cacheBearerToken,
 } = require('./app')
 
 ;(async () => {
-    let token = await getBearerToken()
-    console.log(token)
-    // let report = await generateReport()
-    // console.log(report)
+    await cacheBearerToken()
+    let report = await generateReport()
+    console.log(report)
 })()
